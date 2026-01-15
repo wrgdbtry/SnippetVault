@@ -19,11 +19,6 @@ except ImportError:
 
 from model import SnippetManager, Snippet
 
-
-# ═══════════════════════════════════════════════════════════
-#                    ВИДЖЕТЫ
-# ═══════════════════════════════════════════════════════════
-
 class CodeView(Static):
 
     def __init__(self, **kwargs):
@@ -33,7 +28,6 @@ class CodeView(Static):
     def show_snippet(self, snippet: Snippet) -> None:
         self.current_snippet = snippet
 
-        # Создаём подсветку синтаксиса
         syntax = Syntax(
             snippet.code,
             snippet.language,
@@ -42,7 +36,7 @@ class CodeView(Static):
             word_wrap=True
         )
 
-        # Информация о тегах
+
         tags_str = ", ".join(f"#{tag}" for tag in snippet.tags)
 
         self.update(Panel(
@@ -73,16 +67,15 @@ class LanguageItem(ListItem):
 
     def _get_icon(self) -> str:
         icons = {
-            "python": "🐍",
-            "bash": "💻",
-            "sql": "🗃️",
-            "yaml": "📋",
-            "javascript": "🟨",
-            "rust": "🦀",
-            "all": "📚"
+            "python": "",
+            "bash": "",
+            "sql": "",
+            "yaml": "",
+            "javascript": "",
+            "rust": "",
+            "all": ""
         }
-        return icons.get(self.language.lower(), "📄")
-
+        return icons.get(self.language.lower(), "")
 
 class SnippetItem(ListItem):
 
@@ -96,8 +89,7 @@ class SnippetItem(ListItem):
 
 class AddSnippetScreen(ModalScreen):
 
-    CSS = """
-    AddSnippetScreen {
+    CSS = """ AddSnippetScreen {
         align: center middle;
     }
     
@@ -153,7 +145,7 @@ class AddSnippetScreen(ModalScreen):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="add-dialog"):
-            yield Label("📝 Новый сниппет", id="dialog-title")
+            yield Label("  Новый сниппет", id="dialog-title")
 
             yield Label("Название:")
             yield Input(placeholder="Например: Docker build", id="title-input")
@@ -198,7 +190,7 @@ class AddSnippetScreen(ModalScreen):
                 tags=tags
             )
             app.refresh_all_lists()
-            self.notify(f"✅ Добавлен: {title}", severity="information")
+            self.notify(f" Добавлен: {title}", severity="information")
 
         self.app.pop_screen()
 
@@ -217,7 +209,7 @@ class SnippetVaultApp(App):
     }
     
     #sidebar {
-        width: 28;
+        width: 36;
         background: $panel;
         border-right: tall $primary;
         padding: 0 1;
@@ -285,7 +277,7 @@ class SnippetVaultApp(App):
     }
     """
 
-    TITLE = "🗃️ SnippetVault"
+    TITLE = " SnippetVault"
     SUB_TITLE = "Ваше хранилище кода"
 
     BINDINGS = [
@@ -309,17 +301,17 @@ class SnippetVaultApp(App):
 
         with Horizontal(id="main-container"):
             with Vertical(id="sidebar"):
-                yield Static("📂 Категории", id="sidebar-title")
+                yield Static(" Категории", id="sidebar-title")
                 yield ListView(id="languages-list")
 
                 with Vertical(id="snippets-section"):
-                    yield Static("📝 Сниппеты", id="snippets-title")
+                    yield Static(" Сниппеты", id="snippets-title")
                     yield ListView(id="snippets-list")
 
             with Vertical(id="content"):
                 with Container(id="search-bar"):
                     yield Input(
-                        placeholder="🔍 Поиск по названию или тегам...",
+                        placeholder=" Поиск по названию или тегам...",
                         id="search-input"
                     )
                 yield CodeView(id="code-view")
@@ -398,15 +390,15 @@ class SnippetVaultApp(App):
                 try:
                     pyperclip.copy(code_view.current_snippet.code)
                     self.notify(
-                        f"✅ Скопировано: {code_view.current_snippet.title}",
+                        f" Скопировано: {code_view.current_snippet.title}",
                         severity="information"
                     )
                 except Exception as e:
-                    self.notify(f"❌ Ошибка: {e}", severity="error")
+                    self.notify(f" Ошибка: {e}", severity="error")
             else:
-                self.notify("⚠️ pyperclip не установлен", severity="warning")
+                self.notify(" pyperclip не установлен", severity="warning")
         else:
-            self.notify("⚠️ Сначала выберите сниппет", severity="warning")
+            self.notify(" Сначала выберите сниппет", severity="warning")
 
     def action_add_snippet(self) -> None:
         self.push_screen(AddSnippetScreen())
@@ -419,9 +411,9 @@ class SnippetVaultApp(App):
             self.manager.delete(code_view.current_snippet.id)
             self.refresh_all_lists()
             code_view.show_placeholder()
-            self.notify(f"🗑️ Удалён: {title}", severity="warning")
+            self.notify(f" Удалён: {title}", severity="warning")
         else:
-            self.notify("⚠️ Сначала выберите сниппет", severity="warning")
+            self.notify(" Сначала выберите сниппет", severity="warning")
 
     def action_focus_search(self) -> None:
         self.query_one("#search-input", Input).focus()
