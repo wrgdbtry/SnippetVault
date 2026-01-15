@@ -1,7 +1,7 @@
 ## SnippetVault
-this project is a mix of author's madness and gemeni shit, I am not responsible for any issues/snippet loss
+this project is a mix of author's madness and gemeni, I am not responsible for any issues/snippet loss
 
-<img width="1300" height="710" alt="image" src="https://github.com/user-attachments/assets/df055a91-fdd1-4467-a54a-a51452dda6fc" />
+<img width="949" height="985" alt="изображение" src="https://github.com/user-attachments/assets/24ecf541-4a09-4305-93e7-addccc6029c1" />
 
 ## How to build
 ```bash
