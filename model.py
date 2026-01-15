@@ -1,8 +1,3 @@
-"""
-SnippetVault - Модуль работы с данными
-"""
-from __future__ import annotations
-
 import json
 from pathlib import Path
 from dataclasses import dataclass, asdict
@@ -11,7 +6,7 @@ from typing import Optional, List
 
 @dataclass
 class Snippet:
-    """Структура сниппета"""
+
     id: int
     title: str
     language: str
@@ -19,7 +14,6 @@ class Snippet:
     tags: List[str]
 
     def matches_search(self, query: str) -> bool:
-        """Проверка соответствия поисковому запросу"""
         query = query.lower()
         return (
             query in self.title.lower() or
@@ -29,7 +23,6 @@ class Snippet:
 
 
 class SnippetManager:
-    """Менеджер для CRUD операций со сниппетами"""
 
     def __init__(self, filepath: str = "snippets.json"):
         self.filepath = Path(filepath)
@@ -37,7 +30,6 @@ class SnippetManager:
         self._load_snippets()
 
     def _load_snippets(self) -> None:
-        """Загрузка сниппетов из JSON файла"""
         if not self.filepath.exists():
             self._create_default_snippets()
             return
@@ -51,13 +43,11 @@ class SnippetManager:
             self.snippets = []
 
     def _save_to_file(self) -> None:
-        """Сохранение всех сниппетов в файл"""
         with open(self.filepath, 'w', encoding='utf-8') as f:
             data = [asdict(s) for s in self.snippets]
             json.dump(data, f, ensure_ascii=False, indent=2)
 
     def _create_default_snippets(self) -> None:
-        """Создание файла с примерами по умолчанию"""
         self.snippets = [
             Snippet(
                 id=1,
@@ -157,29 +147,24 @@ def slow_function():
         self._save_to_file()
 
     def get_all(self) -> List[Snippet]:
-        """Получить все сниппеты"""
         return self.snippets
 
     def get_by_id(self, snippet_id: int) -> Optional[Snippet]:
-        """Получить сниппет по ID"""
         for snippet in self.snippets:
             if snippet.id == snippet_id:
                 return snippet
         return None
 
     def get_languages(self) -> List[str]:
-        """Получить список уникальных языков"""
         languages = set(s.language for s in self.snippets)
         return sorted(languages)
 
     def get_by_language(self, language: str) -> List[Snippet]:
-        """Получить сниппеты по языку"""
         if language.lower() == "all":
             return self.snippets
         return [s for s in self.snippets if s.language.lower() == language.lower()]
 
     def search(self, query: str, language: Optional[str] = None) -> List[Snippet]:
-        """Поиск сниппетов по запросу"""
         if not query:
             if language:
                 return self.get_by_language(language)
@@ -193,7 +178,6 @@ def slow_function():
         return results
 
     def add(self, title: str, language: str, code: str, tags: List[str]) -> Snippet:
-        """Добавить новый сниппет"""
         new_id = max((s.id for s in self.snippets), default=0) + 1
         snippet = Snippet(
             id=new_id,
@@ -207,7 +191,6 @@ def slow_function():
         return snippet
 
     def update(self, snippet_id: int, **kwargs) -> Optional[Snippet]:
-        """Обновить сниппет"""
         snippet = self.get_by_id(snippet_id)
         if snippet:
             for key, value in kwargs.items():
@@ -217,7 +200,6 @@ def slow_function():
         return snippet
 
     def delete(self, snippet_id: int) -> bool:
-        """Удалить сниппет"""
         snippet = self.get_by_id(snippet_id)
         if snippet:
             self.snippets.remove(snippet)

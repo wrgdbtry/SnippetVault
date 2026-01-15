@@ -1,8 +1,3 @@
-"""
-SnippetVault - UI модуль на Textual
-"""
-from __future__ import annotations
-
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, Container
 from textual.widgets import (
@@ -30,14 +25,12 @@ from model import SnippetManager, Snippet
 # ═══════════════════════════════════════════════════════════
 
 class CodeView(Static):
-    """Виджет для отображения кода с подсветкой синтаксиса"""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.current_snippet: Optional[Snippet] = None
 
     def show_snippet(self, snippet: Snippet) -> None:
-        """Отобразить сниппет с подсветкой"""
         self.current_snippet = snippet
 
         # Создаём подсветку синтаксиса
@@ -60,7 +53,6 @@ class CodeView(Static):
         ))
 
     def show_placeholder(self, message: str = "Выберите сниппет...") -> None:
-        """Показать плейсхолдер"""
         self.current_snippet = None
         self.update(Panel(
             f"[dim italic]{message}[/dim italic]",
@@ -69,7 +61,6 @@ class CodeView(Static):
 
 
 class LanguageItem(ListItem):
-    """Элемент списка языков"""
 
     def __init__(self, language: str, count: int, **kwargs):
         super().__init__(**kwargs)
@@ -94,7 +85,6 @@ class LanguageItem(ListItem):
 
 
 class SnippetItem(ListItem):
-    """Элемент списка сниппетов"""
 
     def __init__(self, snippet: Snippet, **kwargs):
         super().__init__(**kwargs)
@@ -104,12 +94,7 @@ class SnippetItem(ListItem):
         yield Label(f"  {self.snippet.title}")
 
 
-# ═══════════════════════════════════════════════════════════
-#                 МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ
-# ═══════════════════════════════════════════════════════════
-
 class AddSnippetScreen(ModalScreen):
-    """Модальное окно для добавления нового сниппета"""
 
     CSS = """
     AddSnippetScreen {
@@ -183,8 +168,8 @@ class AddSnippetScreen(ModalScreen):
             yield TextArea(id="code-area")
 
             with Horizontal(id="buttons"):
-                yield Button("✅ Сохранить", variant="success", id="save-btn")
-                yield Button("❌ Отмена", variant="error", id="cancel-btn")
+                yield Button("Сохранить", variant="success", id="save-btn")
+                yield Button("Отмена", variant="error", id="cancel-btn")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-btn":
@@ -204,7 +189,6 @@ class AddSnippetScreen(ModalScreen):
 
         tags = [t.strip() for t in tags_str.split(",") if t.strip()]
 
-        # Получаем ссылку на главное приложение и добавляем сниппет
         app = self.app
         if isinstance(app, SnippetVaultApp):
             app.manager.add(
@@ -221,13 +205,7 @@ class AddSnippetScreen(ModalScreen):
     def action_cancel(self) -> None:
         self.app.pop_screen()
 
-
-# ═══════════════════════════════════════════════════════════
-#                   ГЛАВНОЕ ПРИЛОЖЕНИЕ
-# ═══════════════════════════════════════════════════════════
-
 class SnippetVaultApp(App):
-    """Главное приложение SnippetVault"""
 
     CSS = """
     Screen {
@@ -324,13 +302,12 @@ class SnippetVaultApp(App):
         self.manager = SnippetManager()
         self.current_language = "all"
         self.current_snippets: List[Snippet] = []
-        self._list_counter = 0  # Счётчик для уникальных ID
+        self._list_counter = 0 
 
     def compose(self) -> ComposeResult:
         yield Header()
 
         with Horizontal(id="main-container"):
-            # ===== Сайдбар =====
             with Vertical(id="sidebar"):
                 yield Static("📂 Категории", id="sidebar-title")
                 yield ListView(id="languages-list")
@@ -339,7 +316,6 @@ class SnippetVaultApp(App):
                     yield Static("📝 Сниппеты", id="snippets-title")
                     yield ListView(id="snippets-list")
 
-            # ===== Основной контент =====
             with Vertical(id="content"):
                 with Container(id="search-bar"):
                     yield Input(
@@ -351,28 +327,23 @@ class SnippetVaultApp(App):
         yield Footer()
 
     def on_mount(self) -> None:
-        """Инициализация при запуске"""
         self._populate_languages()
         self._populate_snippets()
         self.query_one("#code-view", CodeView).show_placeholder()
 
     def _get_unique_id(self, prefix: str) -> str:
-        """Генерация уникального ID для виджета"""
         self._list_counter += 1
         return f"{prefix}-{self._list_counter}"
 
     def _populate_languages(self) -> None:
-        """Заполнить список языков"""
         languages_list = self.query_one("#languages-list", ListView)
         languages_list.clear()
 
-        # Добавляем "Все"
         all_count = len(self.manager.get_all())
         languages_list.mount(
             LanguageItem("all", all_count, id=self._get_unique_id("lang"))
         )
 
-        # Добавляем языки
         for lang in self.manager.get_languages():
             count = len(self.manager.get_by_language(lang))
             languages_list.mount(
@@ -380,7 +351,6 @@ class SnippetVaultApp(App):
             )
 
     def _populate_snippets(self, snippets: Optional[List[Snippet]] = None) -> None:
-        """Заполнить список сниппетов"""
         snippets_list = self.query_one("#snippets-list", ListView)
         snippets_list.clear()
 
@@ -398,16 +368,11 @@ class SnippetVaultApp(App):
             self.query_one("#code-view", CodeView).show_placeholder("Нет сниппетов")
 
     def refresh_all_lists(self) -> None:
-        """Обновить все списки (безопасно)"""
         self._populate_languages()
         self._populate_snippets()
 
-    # ═══════════════════════════════════════════════════════
-    #                    ОБРАБОТЧИКИ СОБЫТИЙ
-    # ═══════════════════════════════════════════════════════
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
-        """Обработка выбора в списках"""
         item = event.item
 
         if isinstance(item, LanguageItem):
@@ -419,18 +384,13 @@ class SnippetVaultApp(App):
             self.query_one("#code-view", CodeView).show_snippet(item.snippet)
 
     def on_input_changed(self, event: Input.Changed) -> None:
-        """Обработка поискового ввода"""
         if event.input.id == "search-input":
             query = event.value
             results = self.manager.search(query, self.current_language)
             self._populate_snippets(results)
 
-    # ═══════════════════════════════════════════════════════
-    #                       ДЕЙСТВИЯ
-    # ═══════════════════════════════════════════════════════
 
     def action_copy_code(self) -> None:
-        """Копировать текущий код в буфер обмена"""
         code_view = self.query_one("#code-view", CodeView)
 
         if code_view.current_snippet:
@@ -449,11 +409,9 @@ class SnippetVaultApp(App):
             self.notify("⚠️ Сначала выберите сниппет", severity="warning")
 
     def action_add_snippet(self) -> None:
-        """Открыть диалог добавления сниппета"""
         self.push_screen(AddSnippetScreen())
 
     def action_delete_snippet(self) -> None:
-        """Удалить текущий сниппет"""
         code_view = self.query_one("#code-view", CodeView)
 
         if code_view.current_snippet:
@@ -466,11 +424,9 @@ class SnippetVaultApp(App):
             self.notify("⚠️ Сначала выберите сниппет", severity="warning")
 
     def action_focus_search(self) -> None:
-        """Фокус на строку поиска"""
         self.query_one("#search-input", Input).focus()
 
     def action_clear_search(self) -> None:
-        """Очистить поиск"""
         search_input = self.query_one("#search-input", Input)
         search_input.value = ""
         self._populate_snippets()
