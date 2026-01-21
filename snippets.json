@@ -1,0 +1,78 @@
+[
+  {
+    "id": 1,
+    "title": "Распаковка tar.gz",
+    "language": "bash",
+    "code": "tar -xzvf archive.tar.gz",
+    "tags": [
+      "linux",
+      "archive",
+      "compression"
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Python HTTP сервер",
+    "language": "bash",
+    "code": "python -m http.server 8000",
+    "tags": [
+      "python",
+      "server",
+      "quick"
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Git отмена последнего коммита",
+    "language": "bash",
+    "code": "git reset --soft HEAD~1",
+    "tags": [
+      "git",
+      "undo"
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Python virtualenv",
+    "language": "bash",
+    "code": "# Создание\npython -m venv venv\n\n# Активация (Linux/Mac)\nsource venv/bin/activate\n\n# Активация (Windows)\nvenv\\Scripts\\activate",
+    "tags": [
+      "python",
+      "venv",
+      "environment"
+    ]
+  },
+  {
+    "id": 6,
+    "title": "SQL выборка с JOIN",
+    "language": "sql",
+    "code": "SELECT \n    u.name,\n    o.order_date,\n    o.total\nFROM users u\nLEFT JOIN orders o ON u.id = o.user_id\nWHERE o.total > 100\nORDER BY o.order_date DESC;",
+    "tags": [
+      "sql",
+      "join",
+      "query"
+    ]
+  },
+  {
+    "id": 7,
+    "title": "Python декоратор таймера",
+    "language": "python",
+    "code": "import time\nfrom functools import wraps\n\ndef timer(func):\n    @wraps(func)\n    def wrapper(*args, **kwargs):\n        start = time.perf_counter()\n        result = func(*args, **kwargs)\n        elapsed = time.perf_counter() - start\n        print(f\"{func.__name__} took {elapsed:.4f}s\")\n        return result\n    return wrapper\n\n@timer\ndef slow_function():\n    time.sleep(1)",
+    "tags": [
+      "python",
+      "decorator",
+      "performance"
+    ]
+  },
+  {
+    "id": 8,
+    "title": "Найти большие файлы Linux",
+    "language": "bash",
+    "code": "find / -type f -size +100M 2>/dev/null | head -20",
+    "tags": [
+      "linux",
+      "find",
+      "disk"
+    ]
+  }
+]

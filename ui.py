@@ -11,6 +11,17 @@ from rich.panel import Panel
 
 from typing import List, Optional
 
+import yaml 
+
+def load_language(lang_code):
+    with open(f"{lang_code}.yaml", "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+try:
+    lang = load_language("en")
+except:
+    lang = {}
+
 try:
     import pyperclip
     CLIPBOARD_AVAILABLE = True
@@ -18,6 +29,7 @@ except ImportError:
     CLIPBOARD_AVAILABLE = False
 
 from model import SnippetManager, Snippet
+
 
 class CodeView(Static):
 
@@ -36,7 +48,6 @@ class CodeView(Static):
             word_wrap=True
         )
 
-
         tags_str = ", ".join(f"#{tag}" for tag in snippet.tags)
 
         self.update(Panel(
@@ -46,7 +57,9 @@ class CodeView(Static):
             border_style="green"
         ))
 
-    def show_placeholder(self, message: str = "Выберите сниппет...") -> None:
+    def show_placeholder(self, message: str = None) -> None:
+        if message is None:
+            message = lang.get("select_snippet_first", "Select a snippet")
         self.current_snippet = None
         self.update(Panel(
             f"[dim italic]{message}[/dim italic]",
@@ -77,6 +90,7 @@ class LanguageItem(ListItem):
         }
         return icons.get(self.language.lower(), "")
 
+
 class SnippetItem(ListItem):
 
     def __init__(self, snippet: Snippet, **kwargs):
@@ -89,7 +103,8 @@ class SnippetItem(ListItem):
 
 class AddSnippetScreen(ModalScreen):
 
-    CSS = """ AddSnippetScreen {
+    CSS = """
+    AddSnippetScreen {
         align: center middle;
     }
     
@@ -140,34 +155,69 @@ class AddSnippetScreen(ModalScreen):
     """
 
     BINDINGS = [
-        Binding("escape", "cancel", "Отмена"),
+        Binding("escape", "cancel", lang.get("cancel", "Отмена")),
     ]
 
     def compose(self) -> ComposeResult:
         with Vertical(id="add-dialog"):
-            yield Label("  Новый сниппет", id="dialog-title")
+            yield Label(f'  {lang.get("new_snippet", "Создать сниппет")}', id="dialog-title")
 
-            yield Label("Название:")
-            yield Input(placeholder="Например: Docker build", id="title-input")
+            yield Label(f'{lang.get("title", "Название")}:')
+            yield Input(placeholder=f'{lang.get("example", "Например")}: Docker build', id="title-input")
 
-            yield Label("Язык:")
+            yield Label(f'{lang.get("language", "Язык")}:')
             yield Input(placeholder="python, bash, sql, yaml...", id="lang-input")
 
-            yield Label("Теги (через запятую):")
+            yield Label(f'{lang.get("tags", "Теги (через запятую)")}:')
             yield Input(placeholder="docker, deploy, quick", id="tags-input")
 
-            yield Label("Код (многострочный):")
+            yield Label(f'{lang.get("code", "Код")}:')
             yield TextArea(id="code-area")
 
             with Horizontal(id="buttons"):
-                yield Button("Сохранить", variant="success", id="save-btn")
-                yield Button("Отмена", variant="error", id="cancel-btn")
+                yield Button(lang.get("save", "Сохранить"), variant="success", id="save-btn")
+                yield Button(lang.get("cancel", "Отмена"), variant="error", id="cancel-btn")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-btn":
             self._save_snippet()
         else:
             self.app.pop_screen()
+    
+
+    def active_lang_switch(App):
+
+        config_path = "config.yaml"
+        
+        # 1. Читаем конфиг
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f) or {}
+        except FileNotFoundError:
+            config = {"lang": "en"}
+
+        # 2. Логика переключения (ru <-> en)
+        current_lang = config.get("lang", "en")
+        new_lang = "en" if current_lang == "ru" else "ru"
+        
+        # 3. Записываем новый язык в конфиг
+        config["lang"] = new_lang
+        with open(config_path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(config, f)
+
+        # 4. Загружаем данные языка
+        translations = load_language(new_lang)
+
+        # 5. Обновляем данные в приложении и перерисовываем окно
+        # Сохраняем словарь переводов в переменную приложения
+        app_instance.translations = translations
+        
+        # ВАЖНО: Команда для полной перерисовки виджетов
+        # Метод recompose() удаляет все виджеты и создает их заново (вызывает compose)
+        app_instance.recompose() 
+        
+        # Если нужно просто обновить экран (иногда требуется notify)
+        app_instance.notify(f"Language switched to {new_lang.upper()}")
 
     def _save_snippet(self) -> None:
         title = self.query_one("#title-input", Input).value.strip()
@@ -176,7 +226,7 @@ class AddSnippetScreen(ModalScreen):
         code = self.query_one("#code-area", TextArea).text
 
         if not all([title, language, code]):
-            self.notify("Заполните все обязательные поля!", severity="error")
+            self.notify(lang.get("not_enough_parametrs", "Заполните все обязательные поля!"), severity="error")
             return
 
         tags = [t.strip() for t in tags_str.split(",") if t.strip()]
@@ -190,12 +240,13 @@ class AddSnippetScreen(ModalScreen):
                 tags=tags
             )
             app.refresh_all_lists()
-            self.notify(f" Добавлен: {title}", severity="information")
+            self.notify(f"  {lang.get('added', 'Добавлено')}: {title}", severity="information")
 
         self.app.pop_screen()
 
     def action_cancel(self) -> None:
         self.app.pop_screen()
+
 
 class SnippetVaultApp(App):
 
@@ -278,15 +329,16 @@ class SnippetVaultApp(App):
     """
 
     TITLE = " SnippetVault"
-    SUB_TITLE = "Ваше хранилище кода"
+    SUB_TITLE = "Your code vault"
 
     BINDINGS = [
-        Binding("q", "quit", "Выход"),
-        Binding("c", "copy_code", "Копировать"),
-        Binding("a", "add_snippet", "Добавить"),
-        Binding("d", "delete_snippet", "Удалить"),
-        Binding("/", "focus_search", "Поиск"),
-        Binding("escape", "clear_search", "Сбросить"),
+        Binding("q", "quit", lang.get("quit", "Выход")),
+        Binding("c", "copy_code", lang.get("copy_code", "Копировать")),
+        Binding("a", "add_snippet", lang.get("add_snippet", "Добавить")),
+        Binding("d", "delete_snippet", lang.get("delete_snippet", "Удалить")),
+        Binding("/", "focus_search", lang.get("focus_search", "Поиск")),
+        Binding("l", "lang_switch", "Change language"),
+        Binding("escape", "clear_search", lang.get("clear_search", "Сбросить")),
     ]
 
     def __init__(self):
@@ -294,24 +346,24 @@ class SnippetVaultApp(App):
         self.manager = SnippetManager()
         self.current_language = "all"
         self.current_snippets: List[Snippet] = []
-        self._list_counter = 0 
+        self._list_counter = 0
 
     def compose(self) -> ComposeResult:
         yield Header()
 
         with Horizontal(id="main-container"):
             with Vertical(id="sidebar"):
-                yield Static(" Категории", id="sidebar-title")
+                yield Static(f" {lang.get('categories', 'Категории')}", id="sidebar-title")
                 yield ListView(id="languages-list")
 
                 with Vertical(id="snippets-section"):
-                    yield Static(" Сниппеты", id="snippets-title")
+                    yield Static(f" {lang.get('snippets', 'Сниппеты')}", id="snippets-title")
                     yield ListView(id="snippets-list")
 
             with Vertical(id="content"):
                 with Container(id="search-bar"):
                     yield Input(
-                        placeholder=" Поиск по названию или тегам...",
+                        placeholder=f" {lang.get('search_placeholder', 'Поиск по названию или тегам...')}",
                         id="search-input"
                     )
                 yield CodeView(id="code-view")
@@ -336,10 +388,10 @@ class SnippetVaultApp(App):
             LanguageItem("all", all_count, id=self._get_unique_id("lang"))
         )
 
-        for lang in self.manager.get_languages():
-            count = len(self.manager.get_by_language(lang))
+        for language in self.manager.get_languages():
+            count = len(self.manager.get_by_language(language))
             languages_list.mount(
-                LanguageItem(lang, count, id=self._get_unique_id("lang"))
+                LanguageItem(language, count, id=self._get_unique_id("lang"))
             )
 
     def _populate_snippets(self, snippets: Optional[List[Snippet]] = None) -> None:
@@ -357,12 +409,11 @@ class SnippetVaultApp(App):
             )
 
         if not snippets:
-            self.query_one("#code-view", CodeView).show_placeholder("Нет сниппетов")
+            self.query_one("#code-view", CodeView).show_placeholder(lang.get("no_snippets", "Нет сниппетов"))
 
     def refresh_all_lists(self) -> None:
         self._populate_languages()
         self._populate_snippets()
-
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         item = event.item
@@ -381,7 +432,6 @@ class SnippetVaultApp(App):
             results = self.manager.search(query, self.current_language)
             self._populate_snippets(results)
 
-
     def action_copy_code(self) -> None:
         code_view = self.query_one("#code-view", CodeView)
 
@@ -390,15 +440,15 @@ class SnippetVaultApp(App):
                 try:
                     pyperclip.copy(code_view.current_snippet.code)
                     self.notify(
-                        f" Скопировано: {code_view.current_snippet.title}",
+                        f" {lang.get('copied', 'Скопировано')}: {code_view.current_snippet.title}",
                         severity="information"
                     )
                 except Exception as e:
-                    self.notify(f" Ошибка: {e}", severity="error")
+                    self.notify(f" {lang.get('error', 'Ошибка')}: {e}", severity="error")
             else:
-                self.notify(" pyperclip не установлен", severity="warning")
+                self.notify(f" {lang.get('clipboard_not_installed', 'pyperclip не установлен')}", severity="warning")
         else:
-            self.notify(" Сначала выберите сниппет", severity="warning")
+            self.notify(f" {lang.get('select_snippet_first', 'Сначала выберите сниппет')}", severity="warning")
 
     def action_add_snippet(self) -> None:
         self.push_screen(AddSnippetScreen())
@@ -411,9 +461,9 @@ class SnippetVaultApp(App):
             self.manager.delete(code_view.current_snippet.id)
             self.refresh_all_lists()
             code_view.show_placeholder()
-            self.notify(f" Удалён: {title}", severity="warning")
+            self.notify(f" {lang.get('deleted', 'Удалён')}: {title}", severity="warning")
         else:
-            self.notify(" Сначала выберите сниппет", severity="warning")
+            self.notify(f" {lang.get('select_snippet_first', 'Сначала выберите сниппет')}", severity="warning")
 
     def action_focus_search(self) -> None:
         self.query_one("#search-input", Input).focus()
