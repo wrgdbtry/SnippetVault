@@ -6,7 +6,7 @@ all: build
 build:
 	@echo "📦 Подготовка окружения..."
 	python3 -m venv .venv
-	.venv/bin/pip install -q textual pyperclip pyinstaller
+	.venv/bin/pip install -q pyyaml textual pyperclip pyinstaller
 	@echo "🔨 Сборка snipv..."
 	.venv/bin/pyinstaller --noconfirm --onefile --console --name snipv main.py
 
@@ -18,4 +18,4 @@ install: build
 	@echo "✅ Готово! Напиши 'snipv' для запуска."
 
 clean:
-	rm -rf build dist .venv *.spec
+	sudo rm -rf build dist .venv *.spec
