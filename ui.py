@@ -36,7 +36,7 @@ def load_language(lang_code):
 
 # Загружаем конфиг и язык
 config = load_config()
-lang = load_language(config.get("lang", "en")
+lang = load_language(config.get("lang", "en"))
 
 try:
     import pyperclip
